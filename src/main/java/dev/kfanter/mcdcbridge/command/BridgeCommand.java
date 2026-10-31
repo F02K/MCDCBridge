@@ -28,23 +28,25 @@ public final class BridgeCommand implements TabExecutor {
             return false;
         }
         switch (args[0].toLowerCase(Locale.ROOT)) {
-            case "panel" -> {
-                try {
-                    bot.postWhitelistPanel();
-                    sender.sendMessage(Component.text("Whitelist panel posted."));
-                } catch (IllegalStateException e) {
-                    sender.sendMessage(Component.text(e.getMessage()));
-                }
-            }
+            case "panel" -> syncPanel(sender, "Whitelist panel updated.");
             case "reload" -> {
                 config.reload();
-                sender.sendMessage(Component.text("Config reloaded (token changes need a restart)."));
+                syncPanel(sender, "Config reloaded, panel updated (token changes need a restart).");
             }
             default -> {
                 return false;
             }
         }
         return true;
+    }
+
+    private void syncPanel(CommandSender sender, String success) {
+        try {
+            bot.syncWhitelistPanel();
+            sender.sendMessage(Component.text(success));
+        } catch (IllegalStateException e) {
+            sender.sendMessage(Component.text(e.getMessage()));
+        }
     }
 
     @Override

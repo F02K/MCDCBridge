@@ -61,6 +61,16 @@ public final class LinkStore {
                 .toList();
     }
 
+    /** Id of the bot's whitelist panel message, or an empty string if none was posted yet. */
+    public synchronized String panelMessageId() {
+        return yaml.getString("panel-message", "");
+    }
+
+    public synchronized void setPanelMessageId(String messageId) {
+        yaml.set("panel-message", messageId);
+        save();
+    }
+
     private void save() {
         try {
             yaml.save(file);

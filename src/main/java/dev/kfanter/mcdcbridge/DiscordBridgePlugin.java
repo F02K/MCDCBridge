@@ -24,7 +24,7 @@ public final class DiscordBridgePlugin extends JavaPlugin {
             return;
         }
         try {
-            bot = new DiscordBot(config, new WhitelistService(this), new BanService(this), new LinkStore(getDataFolder()));
+            bot = new DiscordBot(config, new WhitelistService(this), new BanService(this), new LinkStore(getDataFolder()), getLogger());
         } catch (RuntimeException e) {
             getLogger().log(Level.SEVERE, "Could not connect to Discord", e);
             getServer().getPluginManager().disablePlugin(this);
