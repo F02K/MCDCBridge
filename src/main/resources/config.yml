@@ -1,0 +1,92 @@
+discord:
+  # Bot token from https://discord.com/developers/applications
+  token: ""
+
+whitelist:
+  # Channel holding the "request whitelist" button (post it with /dcbridge panel).
+  panel-channel-id: ""
+  # Channel where staff accept or deny requests.
+  review-channel-id: ""
+  # Role allowed to review requests. Empty = anyone with the "Manage Server" permission.
+  staff-role-id: ""
+  # Role a Discord user receives once whitelisted. Empty = no role.
+  member-role-id: ""
+  # true = skip the review and whitelist immediately.
+  auto-approve: false
+
+# Giving a Discord user one of these roles bans their linked Minecraft account (they stay whitelisted);
+# taking the role away pardons them. Only users whitelisted through the bot are linked.
+moderation:
+  ban-role-id: ""
+  tempban-role-id: ""
+  # Length of a tempban: 30m, 12h or 7d. The role is removed automatically afterwards.
+  tempban-duration: "7d"
+  ban-reason: "Du wurdest gebannt."
+  tempban-reason: "Du wurdest temporär gebannt."
+
+# Placeholders: {player} Minecraft name, {user} requester mention, {reviewer} staff mention.
+embeds:
+  panel:
+    title: "Whitelist"
+    description: "Klicke auf den Button und gib deinen Minecraft-Namen ein, um dich für den Server freischalten zu lassen."
+    color: "#5865F2"
+  request-sent:
+    title: "Anfrage gesendet"
+    description: "Deine Anfrage für `{player}` wurde ans Team weitergeleitet."
+    color: "#FEE75C"
+  review:
+    title: "Neue Whitelist-Anfrage"
+    description: "{user} möchte `{player}` auf die Whitelist setzen."
+    color: "#5865F2"
+  approved:
+    title: "Angenommen"
+    description: "`{player}` ({user}) wurde auf die Whitelist gesetzt. {reviewer}"
+    color: "#57F287"
+  already-whitelisted:
+    title: "Bereits auf der Whitelist"
+    description: "`{player}` ist schon freigeschaltet."
+    color: "#57F287"
+  denied:
+    title: "Abgelehnt"
+    description: "Die Anfrage von {user} für `{player}` wurde von {reviewer} abgelehnt."
+    color: "#ED4245"
+  not-found:
+    title: "Spieler nicht gefunden"
+    description: "Einen Minecraft-Account `{player}` gibt es nicht."
+    color: "#ED4245"
+  invalid-name:
+    title: "Ungültiger Name"
+    description: "`{player}` ist kein gültiger Minecraft-Name (3-16 Zeichen: Buchstaben, Zahlen, _)."
+    color: "#ED4245"
+  banned:
+    title: "Gesperrt"
+    description: "Du bist gesperrt und kannst keine Whitelist beantragen."
+    color: "#ED4245"
+  no-permission:
+    title: "Keine Berechtigung"
+    description: "Nur das Team darf Anfragen bearbeiten."
+    color: "#ED4245"
+  error:
+    title: "Fehler"
+    description: "Das hat leider nicht geklappt. Bitte melde dich beim Team."
+    color: "#ED4245"
+
+# style: PRIMARY, SECONDARY, SUCCESS, DANGER. emoji is optional.
+buttons:
+  request:
+    label: "Whitelist beantragen"
+    style: PRIMARY
+    emoji: "📝"
+  approve:
+    label: "Annehmen"
+    style: SUCCESS
+    emoji: "✅"
+  deny:
+    label: "Ablehnen"
+    style: DANGER
+    emoji: "❌"
+
+modal:
+  title: "Whitelist beantragen"
+  label: "Minecraft-Name"
+  placeholder: "Notch"

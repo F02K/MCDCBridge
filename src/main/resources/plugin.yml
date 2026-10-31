@@ -1,0 +1,16 @@
+name: MCDCBridge
+version: '${version}'
+main: dev.kfanter.mcdcbridge.DiscordBridgePlugin
+api-version: '1.21'
+description: Configurable Discord bridge with embeds and buttons.
+libraries:
+  - net.dv8tion:JDA:5.2.2
+commands:
+  dcbridge:
+    description: Manage the Discord bridge.
+    usage: /dcbridge <panel|reload>
+    permission: mcdcbridge.admin
+permissions:
+  mcdcbridge.admin:
+    description: Allows managing the Discord bridge.
+    default: op
