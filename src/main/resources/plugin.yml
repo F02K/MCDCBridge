@@ -3,6 +3,7 @@ version: '${version}'
 main: dev.kfanter.mcdcbridge.DiscordBridgePlugin
 api-version: '1.21'
 description: Configurable Discord bridge with embeds and buttons.
+softdepend: [floodgate]
 libraries:
   - net.dv8tion:JDA:5.2.2
 commands:

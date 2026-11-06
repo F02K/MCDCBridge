@@ -50,6 +50,10 @@ embeds:
     title: "Abgelehnt"
     description: "Die Anfrage von {user} für `{player}` wurde von {reviewer} abgelehnt."
     color: "#ED4245"
+  invalid-gamertag:
+    title: "Ungültiger Gamertag"
+    description: "`{player}` ist kein gültiger Xbox-Gamertag (Buchstaben, Zahlen, Leerzeichen)."
+    color: "#ED4245"
   not-found:
     title: "Spieler nicht gefunden"
     description: "Einen Minecraft-Account `{player}` gibt es nicht."
@@ -85,8 +89,19 @@ buttons:
     label: "Ablehnen"
     style: DANGER
     emoji: "❌"
+  # Only shown when Floodgate (Geyser) is installed.
+  request-bedrock:
+    label: "Bedrock-Whitelist beantragen"
+    style: SECONDARY
+    emoji: "🎮"
 
 modal:
   title: "Whitelist beantragen"
   label: "Minecraft-Name"
   placeholder: "Notch"
+
+# Bedrock players (Geyser + Floodgate). Enter the Xbox gamertag; the Floodgate prefix is added automatically.
+modal-bedrock:
+  title: "Bedrock-Whitelist beantragen"
+  label: "Xbox-Gamertag"
+  placeholder: "Gamertag ohne Prefix"

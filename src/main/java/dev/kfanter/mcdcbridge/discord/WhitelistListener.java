@@ -5,6 +5,7 @@ import dev.kfanter.mcdcbridge.link.LinkStore;
 import dev.kfanter.mcdcbridge.whitelist.WhitelistService;
 import dev.kfanter.mcdcbridge.whitelist.WhitelistService.Outcome;
 import dev.kfanter.mcdcbridge.whitelist.WhitelistService.Result;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -19,6 +20,7 @@ import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.text.TextInput;
 import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
 import net.dv8tion.jda.api.interactions.modals.Modal;
@@ -34,11 +36,14 @@ import org.bukkit.configuration.ConfigurationSection;
 public final class WhitelistListener extends ListenerAdapter {
 
     private static final String REQUEST = "whitelist:request";
+    private static final String REQUEST_BEDROCK = "whitelist:request-bedrock";
     private static final String MODAL = "whitelist:modal";
+    private static final String MODAL_BEDROCK = "whitelist:modal-bedrock";
     private static final String APPROVE = "whitelist:approve:";
     private static final String DENY = "whitelist:deny:";
     private static final String NAME_INPUT = "player";
     private static final Pattern VALID_NAME = Pattern.compile("\\w{3,16}");
+    private static final Pattern VALID_GAMERTAG = Pattern.compile("[A-Za-z0-9]+( [A-Za-z0-9]+)*");
 
     private final BridgeConfig config;
     private final EmbedFactory embeds;
@@ -54,9 +59,14 @@ public final class WhitelistListener extends ListenerAdapter {
 
     /** The message with the "request whitelist" button. */
     public MessageCreateData panel() {
+        List<Button> buttons = new ArrayList<>();
+        buttons.add(embeds.button("request", REQUEST));
+        if (whitelist.bedrockAvailable()) {
+            buttons.add(embeds.button("request-bedrock", REQUEST_BEDROCK));
+        }
         return new MessageCreateBuilder()
                 .setEmbeds(embeds.embed("panel", Map.of()))
-                .addActionRow(embeds.button("request", REQUEST))
+                .addActionRow(buttons)
                 .build();
     }
 
@@ -64,7 +74,13 @@ public final class WhitelistListener extends ListenerAdapter {
     public void onButtonInteraction(ButtonInteractionEvent event) {
         String id = event.getComponentId();
         if (id.equals(REQUEST)) {
-            event.replyModal(modal()).queue();
+            event.replyModal(modal(false)).queue();
+        } else if (id.equals(REQUEST_BEDROCK)) {
+            if (whitelist.bedrockAvailable()) {
+                event.replyModal(modal(true)).queue();
+            } else {
+                event.replyEmbeds(embeds.embed("error", Map.of())).setEphemeral(true).queue();
+            }
         } else if (id.startsWith(APPROVE)) {
             review(event, true);
         } else if (id.startsWith(DENY)) {
@@ -74,12 +90,26 @@ public final class WhitelistListener extends ListenerAdapter {
 
     @Override
     public void onModalInteraction(ModalInteractionEvent event) {
-        if (!event.getModalId().equals(MODAL)) {
+        boolean bedrock = event.getModalId().equals(MODAL_BEDROCK);
+        if (!bedrock && !event.getModalId().equals(MODAL)) {
             return;
         }
-        String player = event.getValue(NAME_INPUT).getAsString().trim();
-        Map<String, String> placeholders = placeholders(player, event.getUser().getId(), null);
-        if (!VALID_NAME.matcher(player).matches()) {
+        String input = event.getValue(NAME_INPUT).getAsString().trim();
+        String userId = event.getUser().getId();
+        if (bedrock) {
+            if (!whitelist.bedrockAvailable()) {
+                event.replyEmbeds(embeds.embed("error", Map.of())).setEphemeral(true).queue();
+                return;
+            }
+            if (!VALID_GAMERTAG.matcher(input).matches()) {
+                event.replyEmbeds(embeds.embed("invalid-gamertag", placeholders(input, userId, null)))
+                        .setEphemeral(true).queue();
+                return;
+            }
+        }
+        String player = bedrock ? whitelist.bedrockName(input) : input;
+        Map<String, String> placeholders = placeholders(player, userId, null);
+        if (!bedrock && !VALID_NAME.matcher(player).matches()) {
             event.replyEmbeds(embeds.embed("invalid-name", placeholders)).setEphemeral(true).queue();
             return;
         }
@@ -157,15 +187,15 @@ public final class WhitelistListener extends ListenerAdapter {
                 && member.getRoles().stream().anyMatch(role -> role.getId().equals(roleId));
     }
 
-    private Modal modal() {
-        ConfigurationSection section = config.section("modal");
+    private Modal modal(boolean bedrock) {
+        ConfigurationSection section = config.section(bedrock ? "modal-bedrock" : "modal");
         TextInput input = TextInput.create(NAME_INPUT, section.getString("label", "Minecraft name"), TextInputStyle.SHORT)
                 .setPlaceholder(section.getString("placeholder"))
-                .setMinLength(3)
-                .setMaxLength(16)
+                .setMinLength(bedrock ? 1 : 3)
+                .setMaxLength(bedrock ? 15 : 16)
                 .setRequired(true)
                 .build();
-        return Modal.create(MODAL, section.getString("title", "Whitelist"))
+        return Modal.create(bedrock ? MODAL_BEDROCK : MODAL,section.getString("title", "Whitelist"))
                 .addComponents(ActionRow.of(input))
                 .build();
     }

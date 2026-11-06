@@ -22,7 +22,21 @@ public final class WhitelistService {
         this.plugin = plugin;
     }
 
-    /** The returned future completes on the main thread. */
+    /** True when Floodgate is installed, i.e. Bedrock players can be whitelisted. */
+    public boolean bedrockAvailable() {
+        return Bukkit.getPluginManager().isPluginEnabled("floodgate");
+    }
+
+    /** The name a Bedrock player has on the server: Floodgate prefix + gamertag. */
+    public String bedrockName(String gamertag) {
+        return FloodgateBridge.prefix() + gamertag;
+    }
+
+    private boolean isBedrockName(String name) {
+        return bedrockAvailable() && name.startsWith(FloodgateBridge.prefix());
+    }
+
+    /** Accepts a Java name or, with Floodgate installed, a prefixed Bedrock name. The returned future completes on the main thread. */
     public CompletableFuture<Outcome> add(String name) {
         CompletableFuture<Outcome> future = new CompletableFuture<>();
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
@@ -33,6 +47,14 @@ public final class WhitelistService {
     }
 
     private UUID resolve(String name) {
+        if (isBedrockName(name)) {
+            try {
+                return FloodgateBridge.uuidFor(name.substring(FloodgateBridge.prefix().length()));
+            } catch (Exception e) {
+                plugin.getLogger().log(Level.WARNING, "Could not look up Bedrock player " + name, e);
+                return null;
+            }
+        }
         if (!Bukkit.getOnlineMode()) {
             return Bukkit.getOfflinePlayer(name).getUniqueId();
         }
