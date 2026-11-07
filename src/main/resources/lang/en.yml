@@ -1,0 +1,68 @@
+# English (also the fallback for missing keys). Placeholders: {player} Minecraft name, {user} requester, {reviewer} staff member.
+# Add more languages by dropping <code>.yml files next to this one (e.g. fr.yml, pt_br.yml).
+embeds:
+  panel:
+    title: "Whitelist"
+    description: "Click the button and enter your Minecraft name to get access to the server."
+  request-sent:
+    title: "Request sent"
+    description: "Your request for `{player}` was forwarded to the team."
+  review:
+    title: "New whitelist request"
+    description: "{user} wants to whitelist `{player}`."
+  approved:
+    title: "Approved"
+    description: "`{player}` ({user}) was added to the whitelist. {reviewer}"
+  already-whitelisted:
+    title: "Already whitelisted"
+    description: "`{player}` already has access."
+  denied:
+    title: "Denied"
+    description: "{reviewer} denied the request of {user} for `{player}`."
+  invalid-gamertag:
+    title: "Invalid gamertag"
+    description: "`{player}` is not a valid Xbox gamertag (letters, numbers, spaces)."
+  not-found:
+    title: "Player not found"
+    description: "There is no Minecraft account `{player}`."
+  invalid-name:
+    title: "Invalid name"
+    description: "`{player}` is not a valid Minecraft name (3-16 characters: letters, numbers, _)."
+  banned:
+    title: "Banned"
+    description: "You are banned and cannot request the whitelist."
+  no-permission:
+    title: "No permission"
+    description: "Only the team can handle requests."
+  error:
+    title: "Error"
+    description: "That did not work. Please contact the team."
+
+buttons:
+  request:
+    label: "Request whitelist"
+  approve:
+    label: "Approve"
+  deny:
+    label: "Deny"
+  request-bedrock:
+    label: "Request Bedrock whitelist"
+
+modal:
+  title: "Request whitelist"
+  label: "Minecraft name"
+  placeholder: "Notch"
+
+modal-bedrock:
+  title: "Request Bedrock whitelist"
+  label: "Xbox gamertag"
+  placeholder: "Gamertag without prefix"
+
+# Minecraft-side texts (commands, kick messages).
+minecraft:
+  ban-reason: "You have been banned."
+  tempban-reason: "You have been temporarily banned."
+  panel-updated: "Whitelist panel updated."
+  config-reloaded: "Config reloaded, panel updated (token changes need a restart)."
+  language-info: "Discord server: {guild} | Minecraft language: {minecraft} | Discord language: {discord}"
+  language-unknown: "unknown"

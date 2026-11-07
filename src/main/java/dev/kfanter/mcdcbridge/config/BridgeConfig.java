@@ -1,9 +1,9 @@
 package dev.kfanter.mcdcbridge.config;
 
 import java.time.Duration;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /** Typed, reload-friendly view on config.yml. Values are read on every call. */
@@ -50,12 +50,14 @@ public final class BridgeConfig {
         return plugin.getConfig().getString("moderation.tempban-role-id", "").trim();
     }
 
-    public String banReason() {
-        return plugin.getConfig().getString("moderation.ban-reason", "Banned");
+    /** "en", "de", ... or "discord" (follow the Discord server language). */
+    public String minecraftLanguage() {
+        return plugin.getConfig().getString("language.minecraft", "en").trim().toLowerCase(Locale.ROOT);
     }
 
-    public String tempbanReason() {
-        return plugin.getConfig().getString("moderation.tempban-reason", "Temporarily banned");
+    /** "auto" (Discord server language), "minecraft" or a fixed language code. */
+    public String discordLanguage() {
+        return plugin.getConfig().getString("language.discord", "auto").trim().toLowerCase(Locale.ROOT);
     }
 
     /** Parses values like "30m", "12h" or "7d". */
@@ -77,11 +79,17 @@ public final class BridgeConfig {
         return plugin.getConfig().getBoolean("whitelist.auto-approve", false);
     }
 
-    public ConfigurationSection section(String path) {
-        ConfigurationSection section = plugin.getConfig().getConfigurationSection(path);
-        if (section == null) {
-            throw new IllegalStateException("Missing config section '" + path + "'");
-        }
-        return section;
+    public String embedColor(String key) {
+        return plugin.getConfig().getString("embeds." + key + ".color", "#5865F2");
+    }
+
+    public String buttonStyle(String key) {
+        return plugin.getConfig().getString("buttons." + key + ".style", "PRIMARY");
+    }
+
+    /** Null when the button has no emoji. */
+    public String buttonEmoji(String key) {
+        String emoji = plugin.getConfig().getString("buttons." + key + ".emoji", "");
+        return emoji.isBlank() ? null : emoji;
     }
 }

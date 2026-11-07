@@ -1,13 +1,16 @@
 package dev.kfanter.mcdcbridge.discord;
 
 import dev.kfanter.mcdcbridge.config.BridgeConfig;
+import dev.kfanter.mcdcbridge.lang.Messages;
 import dev.kfanter.mcdcbridge.link.LinkStore;
 import dev.kfanter.mcdcbridge.moderation.BanService;
 import dev.kfanter.mcdcbridge.whitelist.WhitelistService;
 import java.util.logging.Logger;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.events.guild.update.GuildUpdateLocaleEvent;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.requests.GatewayIntent;
@@ -25,12 +28,12 @@ public final class DiscordBot {
     private final ModerationListener moderationListener;
     private final JDA jda;
 
-    public DiscordBot(BridgeConfig config, WhitelistService whitelist, BanService bans, LinkStore links, Logger logger) {
+    public DiscordBot(BridgeConfig config, Messages messages, WhitelistService whitelist, BanService bans, LinkStore links, Logger logger) {
         this.config = config;
         this.links = links;
         this.logger = logger;
-        this.whitelistListener = new WhitelistListener(config, new EmbedFactory(config), whitelist, links);
-        this.moderationListener = new ModerationListener(config, links, bans);
+        this.whitelistListener = new WhitelistListener(config, messages, new EmbedFactory(config), whitelist, links);
+        this.moderationListener = new ModerationListener(config, messages, links, bans);
         // Role changes are only reported for cached members, and need the privileged GUILD_MEMBERS intent.
         this.jda = JDABuilder.createLight(config.token())
                 .enableIntents(GatewayIntent.GUILD_MEMBERS)
@@ -45,8 +48,38 @@ public final class DiscordBot {
                             logger.warning(e.getMessage());
                         }
                     }
+
+                    /** The server language changed: re-post the panel in the new language. */
+                    @Override
+                    public void onGuildUpdateLocale(GuildUpdateLocaleEvent event) {
+                        try {
+                            syncWhitelistPanel();
+                        } catch (IllegalStateException e) {
+                            logger.warning(e.getMessage());
+                        }
+                    }
                 })
                 .build();
+        messages.setGuildLocaleSource(this::guildLocale);
+    }
+
+    /**
+     * The guild the bridge works in: the one with the panel channel, else the first one the bot is in.
+     * Null if the bot is in no guild (yet).
+     */
+    public Guild primaryGuild() {
+        String channelId = config.panelChannelId();
+        TextChannel channel = channelId.isEmpty() ? null : jda.getTextChannelById(channelId);
+        if (channel != null) {
+            return channel.getGuild();
+        }
+        return jda.getGuilds().stream().findFirst().orElse(null);
+    }
+
+    /** Preferred language of the primary guild, e.g. "de" or "en-US"; null if unknown. */
+    public String guildLocale() {
+        Guild guild = primaryGuild();
+        return guild == null ? null : guild.getLocale().getLocale();
     }
 
     /**
@@ -65,12 +98,12 @@ public final class DiscordBot {
             postPanel(channel);
             return;
         }
-        channel.editMessageById(messageId, MessageEditData.fromCreateData(whitelistListener.panel()))
+        channel.editMessageById(messageId, MessageEditData.fromCreateData(whitelistListener.panel(channel.getGuild())))
                 .queue(edited -> { }, failure -> postPanel(channel));
     }
 
     private void postPanel(TextChannel channel) {
-        channel.sendMessage(whitelistListener.panel()).queue(
+        channel.sendMessage(whitelistListener.panel(channel.getGuild())).queue(
                 message -> links.setPanelMessageId(message.getId()),
                 failure -> logger.warning("Could not post the whitelist panel: " + failure.getMessage()));
     }

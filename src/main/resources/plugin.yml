@@ -9,7 +9,7 @@ libraries:
 commands:
   dcbridge:
     description: Manage the Discord bridge.
-    usage: /dcbridge <panel|reload>
+    usage: /dcbridge <panel|reload|language>
     permission: mcdcbridge.admin
 permissions:
   mcdcbridge.admin:

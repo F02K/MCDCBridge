@@ -1,6 +1,7 @@
 package dev.kfanter.mcdcbridge.discord;
 
 import dev.kfanter.mcdcbridge.config.BridgeConfig;
+import dev.kfanter.mcdcbridge.lang.Messages;
 import dev.kfanter.mcdcbridge.link.LinkStore;
 import dev.kfanter.mcdcbridge.moderation.BanService;
 import java.time.Instant;
@@ -21,9 +22,11 @@ public final class ModerationListener extends ListenerAdapter {
     private final BridgeConfig config;
     private final LinkStore links;
     private final BanService bans;
+    private final Messages messages;
 
-    public ModerationListener(BridgeConfig config, LinkStore links, BanService bans) {
+    public ModerationListener(BridgeConfig config, Messages messages, LinkStore links, BanService bans) {
         this.config = config;
+        this.messages = messages;
         this.links = links;
         this.bans = bans;
     }
@@ -33,12 +36,12 @@ public final class ModerationListener extends ListenerAdapter {
         String userId = event.getUser().getId();
         for (Role role : event.getRoles()) {
             if (role.getId().equals(config.banRoleId())) {
-                links.find(userId).ifPresent(link -> bans.ban(link.uuid(), null, config.banReason()));
+                links.find(userId).ifPresent(link -> bans.ban(link.uuid(), null, messages.minecraft().get("minecraft.ban-reason")));
             } else if (role.getId().equals(config.tempbanRoleId())) {
                 Instant until = Instant.now().plus(config.tempbanDuration());
                 links.find(userId).ifPresent(link -> {
                     links.setTempban(userId, until.toEpochMilli());
-                    bans.ban(link.uuid(), until, config.tempbanReason());
+                    bans.ban(link.uuid(), until, messages.minecraft().get("minecraft.tempban-reason"));
                 });
             }
         }

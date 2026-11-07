@@ -1,6 +1,8 @@
 package dev.kfanter.mcdcbridge.discord;
 
 import dev.kfanter.mcdcbridge.config.BridgeConfig;
+import dev.kfanter.mcdcbridge.lang.Lang;
+import dev.kfanter.mcdcbridge.lang.Messages;
 import dev.kfanter.mcdcbridge.link.LinkStore;
 import dev.kfanter.mcdcbridge.whitelist.WhitelistService;
 import dev.kfanter.mcdcbridge.whitelist.WhitelistService.Outcome;
@@ -26,7 +28,6 @@ import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
 import net.dv8tion.jda.api.interactions.modals.Modal;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
-import org.bukkit.configuration.ConfigurationSection;
 
 /**
  * The whole Discord side of the whitelist flow:
@@ -49,23 +50,32 @@ public final class WhitelistListener extends ListenerAdapter {
     private final EmbedFactory embeds;
     private final WhitelistService whitelist;
     private final LinkStore links;
+    private final Messages messages;
 
-    public WhitelistListener(BridgeConfig config, EmbedFactory embeds, WhitelistService whitelist, LinkStore links) {
+    public WhitelistListener(BridgeConfig config, Messages messages, EmbedFactory embeds, WhitelistService whitelist,
+                             LinkStore links) {
         this.config = config;
+        this.messages = messages;
         this.embeds = embeds;
         this.whitelist = whitelist;
         this.links = links;
     }
 
-    /** The message with the "request whitelist" button. */
-    public MessageCreateData panel() {
+    /** Language for output in a guild: its Discord server language unless config says otherwise. */
+    private Lang lang(Guild guild) {
+        return messages.discord(guild == null ? null : guild.getLocale().getLocale());
+    }
+
+    /** The message with the "request whitelist" button, in the language of the given guild. */
+    public MessageCreateData panel(Guild guild) {
+        Lang lang = lang(guild);
         List<Button> buttons = new ArrayList<>();
-        buttons.add(embeds.button("request", REQUEST));
+        buttons.add(embeds.button(lang, "request", REQUEST));
         if (whitelist.bedrockAvailable()) {
-            buttons.add(embeds.button("request-bedrock", REQUEST_BEDROCK));
+            buttons.add(embeds.button(lang, "request-bedrock", REQUEST_BEDROCK));
         }
         return new MessageCreateBuilder()
-                .setEmbeds(embeds.embed("panel", Map.of()))
+                .setEmbeds(embeds.embed(lang, "panel", Map.of()))
                 .addActionRow(buttons)
                 .build();
     }
@@ -73,13 +83,14 @@ public final class WhitelistListener extends ListenerAdapter {
     @Override
     public void onButtonInteraction(ButtonInteractionEvent event) {
         String id = event.getComponentId();
+        Lang lang = lang(event.getGuild());
         if (id.equals(REQUEST)) {
-            event.replyModal(modal(false)).queue();
+            event.replyModal(modal(lang, false)).queue();
         } else if (id.equals(REQUEST_BEDROCK)) {
             if (whitelist.bedrockAvailable()) {
-                event.replyModal(modal(true)).queue();
+                event.replyModal(modal(lang, true)).queue();
             } else {
-                event.replyEmbeds(embeds.embed("error", Map.of())).setEphemeral(true).queue();
+                event.replyEmbeds(embeds.embed(lang, "error", Map.of())).setEphemeral(true).queue();
             }
         } else if (id.startsWith(APPROVE)) {
             review(event, true);
@@ -94,15 +105,16 @@ public final class WhitelistListener extends ListenerAdapter {
         if (!bedrock && !event.getModalId().equals(MODAL)) {
             return;
         }
+        Lang lang = lang(event.getGuild());
         String input = event.getValue(NAME_INPUT).getAsString().trim();
         String userId = event.getUser().getId();
         if (bedrock) {
             if (!whitelist.bedrockAvailable()) {
-                event.replyEmbeds(embeds.embed("error", Map.of())).setEphemeral(true).queue();
+                event.replyEmbeds(embeds.embed(lang, "error", Map.of())).setEphemeral(true).queue();
                 return;
             }
             if (!VALID_GAMERTAG.matcher(input).matches()) {
-                event.replyEmbeds(embeds.embed("invalid-gamertag", placeholders(input, userId, null)))
+                event.replyEmbeds(embeds.embed(lang, "invalid-gamertag", placeholders(input, userId, null)))
                         .setEphemeral(true).queue();
                 return;
             }
@@ -110,54 +122,55 @@ public final class WhitelistListener extends ListenerAdapter {
         String player = bedrock ? whitelist.bedrockName(input) : input;
         Map<String, String> placeholders = placeholders(player, userId, null);
         if (!bedrock && !VALID_NAME.matcher(player).matches()) {
-            event.replyEmbeds(embeds.embed("invalid-name", placeholders)).setEphemeral(true).queue();
+            event.replyEmbeds(embeds.embed(lang, "invalid-name", placeholders)).setEphemeral(true).queue();
             return;
         }
         if (hasRole(event.getMember(), config.banRoleId()) || hasRole(event.getMember(), config.tempbanRoleId())) {
-            event.replyEmbeds(embeds.embed("banned", placeholders)).setEphemeral(true).queue();
+            event.replyEmbeds(embeds.embed(lang, "banned", placeholders)).setEphemeral(true).queue();
             return;
         }
         event.deferReply(true).queue();
         if (config.autoApprove()) {
             whitelist.add(player).thenAccept(outcome -> {
                 onWhitelisted(event.getGuild(), event.getUser().getId(), player, outcome);
-                edit(event.getHook(), resultEmbed(outcome.result()), placeholders);
+                edit(event.getHook(), lang, resultEmbed(outcome.result()), placeholders);
             });
         } else {
-            sendForReview(event.getHook(), event.getJDA().getTextChannelById(config.reviewChannelId()),
+            sendForReview(event.getHook(), lang, event.getJDA().getTextChannelById(config.reviewChannelId()),
                     player, event.getUser().getId(), placeholders);
         }
     }
 
-    private void sendForReview(InteractionHook hook, TextChannel channel, String player, String userId,
+    private void sendForReview(InteractionHook hook, Lang lang, TextChannel channel, String player, String userId,
                                Map<String, String> placeholders) {
         if (channel == null) {
-            edit(hook, "error", placeholders);
+            edit(hook, lang, "error", placeholders);
             return;
         }
         String payload = userId + ":" + player;
-        channel.sendMessageEmbeds(embeds.embed("review", placeholders))
-                .addActionRow(embeds.button("approve", APPROVE + payload), embeds.button("deny", DENY + payload))
-                .queue(sent -> edit(hook, "request-sent", placeholders),
-                        failure -> edit(hook, "error", placeholders));
+        channel.sendMessageEmbeds(embeds.embed(lang, "review", placeholders))
+                .addActionRow(embeds.button(lang, "approve", APPROVE + payload), embeds.button(lang, "deny", DENY + payload))
+                .queue(sent -> edit(hook, lang, "request-sent", placeholders),
+                        failure -> edit(hook, lang, "error", placeholders));
     }
 
     private void review(ButtonInteractionEvent event, boolean approve) {
+        Lang lang = lang(event.getGuild());
         // Component id: whitelist:<approve|deny>:<requesterId>:<player>
         String[] parts = event.getComponentId().split(":", 4);
         Map<String, String> placeholders = placeholders(parts[3], parts[2], event.getUser().getId());
         if (!isStaff(event.getMember())) {
-            event.replyEmbeds(embeds.embed("no-permission", placeholders)).setEphemeral(true).queue();
+            event.replyEmbeds(embeds.embed(lang, "no-permission", placeholders)).setEphemeral(true).queue();
             return;
         }
         if (!approve) {
-            event.editMessageEmbeds(embeds.embed("denied", placeholders)).setComponents(List.of()).queue();
+            event.editMessageEmbeds(embeds.embed(lang, "denied", placeholders)).setComponents(List.of()).queue();
             return;
         }
         event.deferEdit().queue();
         whitelist.add(parts[3]).thenAccept(outcome -> {
             onWhitelisted(event.getGuild(), parts[2], parts[3], outcome);
-            event.getHook().editOriginalEmbeds(embeds.embed(resultEmbed(outcome.result()), placeholders))
+            event.getHook().editOriginalEmbeds(embeds.embed(lang, resultEmbed(outcome.result()), placeholders))
                     .setComponents(List.of()).queue();
         });
     }
@@ -187,21 +200,21 @@ public final class WhitelistListener extends ListenerAdapter {
                 && member.getRoles().stream().anyMatch(role -> role.getId().equals(roleId));
     }
 
-    private Modal modal(boolean bedrock) {
-        ConfigurationSection section = config.section(bedrock ? "modal-bedrock" : "modal");
-        TextInput input = TextInput.create(NAME_INPUT, section.getString("label", "Minecraft name"), TextInputStyle.SHORT)
-                .setPlaceholder(section.getString("placeholder"))
+    private Modal modal(Lang lang, boolean bedrock) {
+        String section = bedrock ? "modal-bedrock" : "modal";
+        TextInput input = TextInput.create(NAME_INPUT, lang.get(section + ".label"), TextInputStyle.SHORT)
+                .setPlaceholder(lang.getOrNull(section + ".placeholder"))
                 .setMinLength(bedrock ? 1 : 3)
                 .setMaxLength(bedrock ? 15 : 16)
                 .setRequired(true)
                 .build();
-        return Modal.create(bedrock ? MODAL_BEDROCK : MODAL,section.getString("title", "Whitelist"))
+        return Modal.create(bedrock ? MODAL_BEDROCK : MODAL, lang.get(section + ".title"))
                 .addComponents(ActionRow.of(input))
                 .build();
     }
 
-    private void edit(InteractionHook hook, String embedKey, Map<String, String> placeholders) {
-        hook.editOriginalEmbeds(embeds.embed(embedKey, placeholders)).queue();
+    private void edit(InteractionHook hook, Lang lang, String embedKey, Map<String, String> placeholders) {
+        hook.editOriginalEmbeds(embeds.embed(lang, embedKey, placeholders)).queue();
     }
 
     private static String resultEmbed(Result result) {

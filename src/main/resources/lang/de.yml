@@ -1,0 +1,68 @@
+# Deutsch. Platzhalter: {player} Minecraft-Name, {user} Antragsteller, {reviewer} Team-Mitglied.
+# Fehlende Schlüssel werden aus en.yml ergänzt. Weitere Sprachen: einfach <code>.yml hier ablegen (z. B. fr.yml).
+embeds:
+  panel:
+    title: "Whitelist"
+    description: "Klicke auf den Button und gib deinen Minecraft-Namen ein, um dich für den Server freischalten zu lassen."
+  request-sent:
+    title: "Anfrage gesendet"
+    description: "Deine Anfrage für `{player}` wurde ans Team weitergeleitet."
+  review:
+    title: "Neue Whitelist-Anfrage"
+    description: "{user} möchte `{player}` auf die Whitelist setzen."
+  approved:
+    title: "Angenommen"
+    description: "`{player}` ({user}) wurde auf die Whitelist gesetzt. {reviewer}"
+  already-whitelisted:
+    title: "Bereits auf der Whitelist"
+    description: "`{player}` ist schon freigeschaltet."
+  denied:
+    title: "Abgelehnt"
+    description: "Die Anfrage von {user} für `{player}` wurde von {reviewer} abgelehnt."
+  invalid-gamertag:
+    title: "Ungültiger Gamertag"
+    description: "`{player}` ist kein gültiger Xbox-Gamertag (Buchstaben, Zahlen, Leerzeichen)."
+  not-found:
+    title: "Spieler nicht gefunden"
+    description: "Einen Minecraft-Account `{player}` gibt es nicht."
+  invalid-name:
+    title: "Ungültiger Name"
+    description: "`{player}` ist kein gültiger Minecraft-Name (3-16 Zeichen: Buchstaben, Zahlen, _)."
+  banned:
+    title: "Gesperrt"
+    description: "Du bist gesperrt und kannst keine Whitelist beantragen."
+  no-permission:
+    title: "Keine Berechtigung"
+    description: "Nur das Team darf Anfragen bearbeiten."
+  error:
+    title: "Fehler"
+    description: "Das hat leider nicht geklappt. Bitte melde dich beim Team."
+
+buttons:
+  request:
+    label: "Whitelist beantragen"
+  approve:
+    label: "Annehmen"
+  deny:
+    label: "Ablehnen"
+  request-bedrock:
+    label: "Bedrock-Whitelist beantragen"
+
+modal:
+  title: "Whitelist beantragen"
+  label: "Minecraft-Name"
+  placeholder: "Notch"
+
+modal-bedrock:
+  title: "Bedrock-Whitelist beantragen"
+  label: "Xbox-Gamertag"
+  placeholder: "Gamertag ohne Prefix"
+
+# Texte auf der Minecraft-Seite (Befehle, Kick-Nachrichten).
+minecraft:
+  ban-reason: "Du wurdest gebannt."
+  tempban-reason: "Du wurdest temporär gebannt."
+  panel-updated: "Whitelist-Panel aktualisiert."
+  config-reloaded: "Konfiguration neu geladen, Panel aktualisiert (Token-Änderungen brauchen einen Neustart)."
+  language-info: "Discord-Server: {guild} | Minecraft-Sprache: {minecraft} | Discord-Sprache: {discord}"
+  language-unknown: "unbekannt"
